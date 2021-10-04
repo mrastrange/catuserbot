@@ -27,9 +27,8 @@ async def fetch_info(replied_user, event):
             user_id=replied_user.user.id, offset=42, max_id=0, limit=80
         )
     )
-    replied_user_profile_photos_count = "User haven't set profile pic"
     try:
-        replied_user_profile_photos_count = replied_user_profile_photos.count
+        replied_user_profile_photos.count
     except AttributeError:
         pass
     user_id = replied_user.user.id
@@ -38,39 +37,36 @@ async def fetch_info(replied_user, event):
     try:
         dc_id, location = get_input_location(replied_user.profile_photo)
     except Exception:
-        dc_id = "Couldn't fetch DC ID!"
+        dc_id = "idk"
     common_chat = replied_user.common_chats_count
     username = replied_user.user.username
     user_bio = replied_user.about
     is_bot = replied_user.user.bot
     restricted = replied_user.user.restricted
-    verified = replied_user.user.verified
+    replied_user.user.verified
+    first_name = first_name.replace("\u2060", "") if first_name else ("ghost")
+    last_name = last_name.replace("\u2060", "") if last_name else ("")
+    full_name = f"{first_name} {last_name}" if first_name else last_name
     photo = await event.client.download_profile_photo(
         user_id,
-        Config.TMP_DOWNLOAD_DIRECTORY + str(user_id) + ".jpg",
+        full_name + ".jpg",
         download_big=True,
     )
-    first_name = (
-        first_name.replace("\u2060", "")
-        if first_name
-        else ("This User has no First Name")
-    )
-    last_name = last_name.replace("\u2060", "") if last_name else (" ")
-    username = "@{}".format(username) if username else ("This User has no Username")
-    user_bio = "This User has no About" if not user_bio else user_bio
-    caption = "<b><i>USER INFO from Durov's Database :</i></b>\n\n"
-    caption += f"<b>👤 First Name:</b> {first_name} {last_name}\n"
-    caption += f"<b>🤵 Username:</b> {username}\n"
-    caption += f"<b>🔖 ID:</b> <code>{user_id}</code>\n"
-    caption += f"<b>🌏 Data Centre ID:</b> {dc_id}\n"
-    caption += f"<b>🖼 Number of Profile Pics:</b> {replied_user_profile_photos_count}\n"
-    caption += f"<b>🤖 Is Bot:</b> {is_bot}\n"
-    caption += f"<b>🔏 Is Restricted:</b> {restricted}\n"
-    caption += f"<b>🌐 Is Verified by Telegram:</b> {verified}\n\n"
-    caption += f"<b>✍️ Bio:</b> \n<code>{user_bio}</code>\n\n"
-    caption += f"<b>👥 Common Chats with this user:</b> {common_chat}\n"
-    caption += "<b>🔗 Permanent Link To Profile:</b> "
-    caption += f'<a href="tg://user?id={user_id}">{first_name}</a>'
+    username = "@{}".format(username) if username else ("No Username")
+    user_bio = "No Bio" if not user_bio else user_bio
+    # Design taken from https://github.com/SaitamaRobot by @VinuXD
+    caption = "<b>╒═══「<b> Appraisal results:</b>」</b>\n\n"
+    caption += f"<b>» Name:</b> <code>{first_name} {last_name}</code>\n"
+    caption += f"<b>» Username:</b> {username}\n"
+    caption += f"<b>» ID:</b> <code>{user_id}</code>\n"
+    caption += f"<b>» Data Centre ID:</b> <code>{dc_id}</code>\n\n"
+    caption += f"<b>» Is Bot:</b> <code>{is_bot}</code>\n"
+    caption += f"<b>» Is Restricted:</b> <code>{restricted}</code>\n"
+    caption += "<b>» Permalink:</b> "
+    caption += f'<a href="tg://user?id={user_id}">link</a>'
+    caption += f"<b>\n\n» About User:</b>\n{user_bio} \n\n"
+    caption += f"<b>╘═══「<b>Group count: <code>{common_chat}</code></b>」</b>\n"
+
     return photo, caption
 
 
@@ -88,7 +84,7 @@ async def _(event):
     replied_user, error_i_a = await get_user_from_event(event)
     if not replied_user:
         return
-    catevent = await edit_or_reply(event, "`Fetching userinfo wait....`")
+    catevent = await edit_or_reply(event, "`Appraising....`")
     replied_user = await event.client(GetFullUserRequest(replied_user.id))
     user_id = replied_user.user.id
     # some people have weird HTML in their names
@@ -108,11 +104,11 @@ async def _(event):
     if spamwatch:
         ban = spamwatch.get_ban(user_id)
         if ban:
-            sw = f"**Spamwatch Banned :** `True` \n       **-**🤷‍♂️**Reason : **`{ban.reason}`"
+            sw = f"**Spamwatch Banned:** `True` \n       **-**🤷‍♂️**Reason : **`{ban.reason}`"
         else:
-            sw = f"**Spamwatch Banned :** `False`"
+            sw = "**Spamwatch Banned:** `False`"
     else:
-        sw = "**Spamwatch Banned :**`Not Connected`"
+        sw = "**Spamwatch Banned:**`Not Connected`"
     try:
         casurl = "https://api.cas.chat/check?user_id={}".format(user_id)
         data = get(casurl).json()
@@ -120,19 +116,17 @@ async def _(event):
         LOGS.info(e)
         data = None
     if data:
-        if data["ok"]:
-            cas = "**Antispam(CAS) Banned :** `True`"
-        else:
-            cas = "**Antispam(CAS) Banned :** `False`"
+        cas = "**CAS Banned :** `True`" if data["ok"] else "**CAS Banned :** `False`"
     else:
-        cas = "**Antispam(CAS) Banned :** `Couldn't Fetch`"
-    caption = """**Info of [{}](tg://user?id={}):
-   -🔖ID : **`{}`
-   **-**👥**Groups in Common : **`{}`
-   **-**🌏**Data Centre Number : **`{}`
-   **-**🔏**Restricted by telegram : **`{}`
-   **-**🦅{}
-   **-**👮‍♂️{}
+        cas = "**CAS Banned :** `Couldn't Fetch`"
+    # Changed design by @VinuXD
+    caption = """╒═══「 Info of [{}](tg://user?id={})」
+   **» **🔖ID : **`{}`
+   **» **👥**Groups in Common : **`{}`
+   **» **🌏**Data Centre Number : **`{}`
+   **» **🔏**Restricted : **`{}`
+   **» **🦅{}
+   **» **👮‍♂️{}
 """.format(
         first_name,
         user_id,
@@ -162,12 +156,12 @@ async def who(event):
     replied_user, reason = await get_user_from_event(event)
     if not replied_user:
         return
-    cat = await edit_or_reply(event, "`Fetching userinfo wait....`")
+    cat = await edit_or_reply(event, "`Appraising....`")
     replied_user = await event.client(GetFullUserRequest(replied_user.id))
     try:
         photo, caption = await fetch_info(replied_user, event)
     except AttributeError:
-        return await edit_or_reply(cat, "`Could not fetch info of that user.`")
+        return await edit_or_reply(cat, "`Could not fetch user info...`")
     message_id_to_reply = await reply_id(event)
     try:
         await event.client.send_file(
@@ -175,7 +169,7 @@ async def who(event):
             photo,
             caption=caption,
             link_preview=False,
-            force_document=False,
+            force_document=True,
             reply_to=message_id_to_reply,
             parse_mode="html",
         )

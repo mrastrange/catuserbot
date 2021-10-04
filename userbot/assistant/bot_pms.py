@@ -1,3 +1,4 @@
+import random
 import re
 from collections import defaultdict
 from datetime import datetime
@@ -75,17 +76,24 @@ async def bot_start(event):
     if check_is_black_list(chat.id):
         return
     reply_to = await reply_id(event)
-    mention = f"[{chat.first_name}](tg://user?id={chat.id})"
-    my_mention = f"[{user.first_name}](tg://user?id={user.id})"
     first = chat.first_name
     last = chat.last_name
-    fullname = f"{first} {last}" if last else first
-    username = f"@{chat.username}" if chat.username else mention
     userid = chat.id
+    fullname = f"{first} {last}" if last else first
+    mention = f"<a href = tg://user?id={userid}>{fullname}</a>"
+    username = f"@{chat.username}" if chat.username else mention
     my_first = user.first_name
     my_last = user.last_name
     my_fullname = f"{my_first} {my_last}" if my_last else my_first
+    my_mention = f"<a href = tg://user?id={user.id}>{my_fullname}</a>"
     my_username = f"@{user.username}" if user.username else my_mention
+    PM_PIC = gvarstatus("pmpermit_pic")
+    if PM_PIC:
+        CAT = [x for x in PM_PIC.split()]
+        PLUTO = list(CAT)
+        PIC = random.choice(PLUTO)
+    else:
+        PIC = None
     if chat.id != Config.OWNER_ID:
         customstrmsg = gvarstatus("START_TEXT") or None
         if customstrmsg is not None:
@@ -103,30 +111,22 @@ async def bot_start(event):
                 my_mention=my_mention,
             )
         else:
-            start_msg = f"Hey! 👤{mention},\
-                        \nI am {my_mention}'s assistant bot.\
-                        \nYou can contact to my master from here.\
-                        \n\nPowered by [Catuserbot](https://t.me/catuserbot)"
-        buttons = [
-            (
-                Button.url("Repo", "https://github.com/sandy1709/catuserbot"),
-                Button.url(
-                    "Deploy",
-                    "https://dashboard.heroku.com/new?button-url=https%3A%2F%2Fgithub.com%2FMr-confused%2Fcatpack&template=https%3A%2F%2Fgithub.com%2FMr-confused%2Fcatpack",
-                ),
-            )
-        ]
+            start_msg = f"<b>Hello {mention}, I am {my_mention}'s personal assistant.\
+ Here you can chat with him. Send your messages here. He will try to reply within 48h.</b>"
+        buttons = [(Button.url("𝗠𝗬 𝗕𝗜𝗢", "t.me/realnub"))]
     else:
-        start_msg = "Hey Master!\
-            \nHow can i help you ?"
+        start_msg = "<b> Hey ADITYA!, How can I help you?. Maybe you can try pressing /help.</b>"
         buttons = None
     try:
-        await event.client.send_message(
+        await event.client.send_file(
             chat.id,
-            start_msg,
+            PIC,
+            caption=start_msg,
+            parse_mode="html",
             link_preview=False,
             buttons=buttons,
             reply_to=reply_to,
+            allow_cache=True,
         )
     except Exception as e:
         if BOTLOG:
@@ -398,11 +398,11 @@ async def send_flood_alert(user_) -> None:
             chat = await catub.tgbot.get_entity(BOTLOG_CHATID)
             await catub.tgbot.send_message(
                 Config.OWNER_ID,
-                f"⚠️  **[Bot Flood Warning !](https://t.me/c/{chat.id}/{fa_msg.id})**",
+                f"⚠️  **[Bot Flood Warning!](https://t.me/c/{chat.id}/{fa_msg.id})**",
             )
         except UserIsBlockedError:
             if BOTLOG:
-                await catub.tgbot.send_message(BOTLOG_CHATID, "**Unblock your bot !**")
+                await catub.tgbot.send_message(BOTLOG_CHATID, "**Unblock your bot!**")
     if FloodConfig.ALERT[user_.id].get("fa_id") is None and fa_msg:
         FloodConfig.ALERT[user_.id]["fa_id"] = fa_msg.id
 
@@ -476,3 +476,14 @@ async def antif_on_msg(event):
         raise StopPropagation
     if user_id in FloodConfig.BANNED_USERS:
         FloodConfig.BANNED_USERS.remove(user_id)
+
+
+@catub.bot_cmd(pattern="^/ping?([\\s]+)?$")
+async def _(event):
+    if event.chat_id != Config.OWNER_ID:
+        return
+    start = datetime.now()
+    catevent = await event.reply("Pong!")
+    end = datetime.now()
+    ms = (end - start).microseconds / 2000
+    await catevent.edit(f"**Pong!**\n`{ms} ms`")
