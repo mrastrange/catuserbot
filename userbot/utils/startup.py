@@ -65,7 +65,7 @@ async def startupmessage():
                 BOTLOG_CHATID,
                 "https://telegra.ph/file/a7c4d830ffb038b846347.jpg",
                 caption="**Your Neko has awoke successfully.**",
-                buttons=[(Button.url("Support", "https://t.me/neklone"),)],
+                buttons=[(Button.url("Support", "https://t.me/catuserbot_support"),)],
             )
     except Exception as e:
         LOGS.error(e)

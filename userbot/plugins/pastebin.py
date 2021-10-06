@@ -167,7 +167,7 @@ async def paste_bin(event):
             result += f"<b>{get_key(pastetype)} is down, So </b>"
         result += f"<b>Pasted to: <a href={response['url']}>{response['bin']}</a></b>"
         if response["raw"] != "":
-            result += f"\n<b>Raw link: <a href={response['raw']}>Raw</a></b>"
+            result += f"\n<b>Raw Link: <a href={response['raw']}>Raw</a></b>"
         await catevent.edit(result, link_preview=False, parse_mode="html")
     except Exception as e:
         await edit_delete(catevent, f"**Error while pasting text:**\n`{e}`")

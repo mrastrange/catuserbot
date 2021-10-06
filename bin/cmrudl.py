@@ -389,7 +389,7 @@ class Main(object):
             file_size = storage["size"]
             meta = {"file_name": file_name, "file_size": file_size, "download": url}
             print(json.dumps(meta))
-            sys.exit(0)
+            exit(0)
 
         # Download with progress info, adding new line to clear after.
         try:

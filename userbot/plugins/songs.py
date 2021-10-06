@@ -14,13 +14,12 @@ from telethon.tl.functions.messages import ImportChatInviteRequest as Get
 from validators.url import url
 from youtubesearchpython import Video
 
-from userbot import catub
-
 from ..core.logger import logging
 from ..core.managers import edit_delete, edit_or_reply
 from ..helpers.functions import name_dl, song_dl, video_dl, yt_search
 from ..helpers.tools import media_type
 from ..helpers.utils import _catutils, reply_id
+from . import catub, hmention
 
 plugin_category = "utils"
 LOGS = logging.getLogger(__name__)
@@ -92,7 +91,7 @@ async def _(event):
         return await catevent.edit(
             f"Sorry!. I can't find any related video/audio for `{query}`"
         )
-    await catevent.edit("`yeah..! i found something wi8..🥰`")
+    await catevent.edit("`Yeah..! i found something wi8..🥰`")
     catthumb = Path(f"{catname}.jpg")
     if not os.path.exists(catthumb):
         catthumb = Path(f"{catname}.webp")
@@ -103,7 +102,8 @@ async def _(event):
         event.chat_id,
         song_file,
         force_document=False,
-        caption=f"**Title:** `{ytdata['title']}`",
+        caption=f"<b><i>➥ Title :- {ytdata['title']}</i></b>\n<b><i>➥ Uploaded by :- {hmention}</i></b>",
+        parse_mode="html",
         thumb=catthumb,
         supports_streaming=True,
         reply_to=reply_to_id,
@@ -175,7 +175,7 @@ async def _(event):
         return await catevent.edit(
             f"Sorry!. I can't find any related video/audio for `{query}`"
         )
-    await catevent.edit("`yeah..! i found something wi8..🥰`")
+    await catevent.edit("`Yeah..! i found something wi8..🥰`")
     catthumb = Path(f"{catname}.jpg")
     if not os.path.exists(catthumb):
         catthumb = Path(f"{catname}.webp")
@@ -186,7 +186,8 @@ async def _(event):
         event.chat_id,
         vsong_file,
         force_document=False,
-        caption=f"**Title:** `{ytdata['title']}`",
+        caption=f"<b><i>➥ Title :- {ytdata['title']}</i></b>\n<b><i>➥ Uploaded by :- {hmention}</i></b>",
+        parse_mode="html",
         thumb=catthumb,
         supports_streaming=True,
         reply_to=reply_to_id,
@@ -331,3 +332,43 @@ async def _(event):
     namem = f"**Song Name : **`{result.text.splitlines()[0]}`\
         \n\n**Details : **__{result.text.splitlines()[2]}__"
     await catevent.edit(namem)
+
+
+@catub.cat_cmd(
+    pattern="dzd ?(.*)",
+    command=("dzd", plugin_category),
+    info={
+        "header": "To download songs via DeezLoad bot",
+        "description": "Spotify/Deezer downloader",
+        "usage": "{tr}dzd <song link>",
+        "examples": "{tr}dzd https://www.deezer.com/track/3657911",
+    },
+)
+async def dzd(event):
+    link = event.pattern_match.group(1)
+    reply_message = await event.get_reply_message()
+    reply_to_id = await reply_id(event)
+    if not link and not reply_message:
+        catevent = await eod(
+            event, "**I need a link to download something pro. (._.)**"
+        )
+    else:
+        catevent = await edit_or_reply(event, "**Downloading...!**")
+    chat = "@DeezLoadBot"
+    async with event.client.conversation(chat) as conv:
+        try:
+            msg = await conv.send_message(link or reply_message)
+            details = await conv.get_response()
+            song = await conv.get_response()
+            """ - don't spam notif - """
+            await event.client.send_read_acknowledge(conv.chat_id)
+            await catevent.delete()
+            await event.client.send_file(
+                event.chat_id, song, caption=details.text, reply_to=reply_to_id
+            )
+            await event.client.delete_messages(
+                conv.chat_id, [msg.id, details.id, song.id]
+            )
+        except YouBlockedUserError:
+            await catevent.edit("**Error:** `unblock` @DeezLoadBot `and retry!`")
+            return
